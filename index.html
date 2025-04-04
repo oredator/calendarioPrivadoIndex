@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario con Opciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+/* Centrar completamente el calendario en la pantalla */
+html, body {
+    font-family: Arial, sans-serif;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background-color: #f4f4f4;
+    overflow: auto;
+}
+
+
+/* Ajustar el tamaño del contenedor del calendario */
+.calendar-container {
+    width: 90vw; /* Aumenta el ancho del calendario */
+    max-width: 1450px; /* Asegura que no se agrande demasiado */
+    min-height: fit-content;
+    background: rgb(255, 255, 255);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: auto;
+}
+
+
+/* Mantener el header del calendario centrado */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 10px 0;
+}
+
+
+.calendar-header button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.calendar-header button:hover {
+    color: blue;
+}
+
+/* Asegurar que los nombres de los días y los días del calendario tengan la misma estructura */
+.days-of-week {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); /* 7 días + espacio extra para el total semanal */
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
+    width: 100%; /* Asegurar que ocupe todo el ancho */
+}
+
+/* Asegurar que el contenedor de los días coincida en tamaño con los nombres */
+.calendar-days {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+/* Asegurar que cada semana se alinee correctamente */
+.week-container {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); /* 7 días + 1 total de semana */
+    gap: 10px; /* Aumenta la separación entre días */
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+
+/* Día del calendario */
+.day {
+    width: 140px; /* Aumenta el tamaño de cada celda */
+    min-height: 170px; /* Hace cada celda más alta */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 10px;
+    position: relative;
+}
+
+
+/* Día actual */
+.day.today {
+    background: #ff5733;
+    color: white;
+    font-weight: bold;
+}
+
+/* Colores según el total del día */
+.day.positive {
+    background: #c8f7c5; /* Verde claro */
+}
+
+.day.negative {
+    background: #f7c5c5; /* Rojo claro */
+}
+
+.day.neutral {
+    background: #ddd; /* Gris */
+}
+
+/* Estilos para la suma semanal */
+.week-total {
+    width: 140px; /* Coincide con el ancho de cada celda */
+    min-height: 170px; /* Coincide con la altura de cada celda */
+    font-size: 16px;
+    font-weight: bold;
+    background: #fff;
+    border: 2px solid #000;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Espaciado entre semanas */
+.week-container + .week-container {
+    margin-top: 10px;
+}
+
+/* Estilos para select e input */
+.day select,
+.day input[type="number"] {
+    width: 90%;
+    font-size: 12px;
+    margin-top: 3px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: white;
+    text-align: center;
+}
+
+/* Resaltar cuando el input está en uso */
+.day input[type="number"]:focus {
+    outline: 2px solid #3498db;
+    border-color: #3498db;
+}
+
+/* Botón "Nuevo" */
+.new-button {
+    width: 60px;
+    font-size: 12px;
+    padding: 3px;
+    margin-top: 5px;
+    cursor: pointer;
+    border: none;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+}
+
+.new-button:hover {
+    background-color: #2980b9;
+}
+
+/* Contenedor de selects y inputs */
+.select-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5px;
+    gap: 5px;
+}
+
+/* Botón de imagen */
+.image-button {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.image-button:hover {
+    background-color: #27ae60;
+}
+
+/* Previsualización de imagen */
+.image-preview {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Estilos para el modal */
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.modal-image {
+    width: 100%;
+    height: auto;
+    max-height: 70vh; /* Limitar la altura de la imagen */
+    border-radius: 10px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Colores según el total del día */
+.day.positive {
+    background: #c8f7c5; /* Verde claro */
+}
+
+.day.negative {
+    background: #f7c5c5; /* Rojo claro */
+}
+
+.day.neutral {
+    background: #ddd; /* Gris */
+}
+
+/* Estilos para la suma semanal */
+.week-total {
+    width: 140px; /* Coincide con el ancho de cada celda */
+    min-height: 170px; /* Coincide con la altura de cada celda */
+    font-size: 16px;
+    font-weight: bold;
+    background: #fff;
+    border: 2px solid #7e7e7e;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Espaciado entre semanas */
+.week-container + .week-container {
+    margin-top: 10px;
+}
+/* Ocultar el header cuando se abra una imagen */
+.hide-header .calendar-header {
+    display: none;
+}
+
+/* Estilos para el resultado semanal */
+.positive-week {
+    background: #c8f7c5 !important; /* Verde claro */
+    border: 2px solid #27ae60;
+}
+
+.negative-week {
+    background: #f7c5c5 !important; /* Rojo claro */
+    border: 2px solid #c0392b;
+}
+
+.neutral-week {
+    background: #ddd !important; /* Gris */
+    border: 2px solid #aaa;
+}
+
+/*Estilos apra el contenedor de cuenta*/
+.account-size-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #efffda; /* Color de fondo suave */
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px auto;
+    width: fit-content;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.account-size-container label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+#account-size {
+    padding: 8px;
+    font-size: 16px;
+    width: 120px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+#account-size:focus {
+    border-color: #007bff;
+    box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+/*Estilos apra el contenedor de suma total mes*/
+
+.account-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.monthly-total-container {
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #efffda;
+    padding: 8px 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/*Porcentaje*/
+.monthly-percentage-container {
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 5px;
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/*botonmes de compra y evnta*/
+.button-container {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    width: 100%;
+}
+
+.buy-button, .sell-button {
+    font-size: 12px;
+    padding: 6px 12px;
+    width: 50%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.buy-button:hover, .sell-button:hover {
+    background-color: #e0e0e0;
+}
+
+/* Cuando se selecciona "Compra" */
+.buy-button.selected {
+    background-color: #7dee75 !important; /* Verde claro */
+    color: #1b5e20 !important; /* Verde oscuro para mejor contraste */
+    border-color: #1b5e20;
+}
+
+/* Cuando se selecciona "Venta" */
+.sell-button.selected {
+    background-color: #fd9797 !important; /* Rojo claro */
+    color: #b71c1c !important; /* Rojo oscuro para mejor contraste */
+    border-color: #b71c1c;
+}
+
+
+
+
+/*estilos total mes y cuenta*/
+.total-balance-container {
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-left: 15px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/*botones de tp sl y be*/
+.trade-type-container {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 5px;
+}
+
+.tp-button, .sl-button, .be-button {
+    font-size: 11px;
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #f1f1f1;
+    transition: background-color 0.3s ease;
+}
+
+.tp-button:hover, .sl-button:hover, .be-button:hover {
+    background-color: #ddd;
+}
+
+/* Colores al estar seleccionados */
+.tp-button.selected {
+    background-color: #a5d6a7; /* Verde suave */
+    color: #1b5e20;
+    border-color: #1b5e20;
+}
+
+.sl-button.selected {
+    background-color: #ef9a9a; /* Rojo suave */
+    color: #b71c1c;
+    border-color: #b71c1c;
+}
+
+.be-button.selected {
+    background-color: #90caf9; /* Azul suave */
+    color: #0d47a1;
+    border-color: #0d47a1;
+}
+
+
+
+
+/*Estilos modal de estadisitcias*/
+/* Estilos del Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 80%; /* Cambiar el ancho para agrandar el modal */
+    max-width: 1000px; /* Limitar el ancho máximo */
+    height: auto; /* Asegura que el modal se ajuste al contenido */
+    max-height: 80vh; /* Limitar la altura máxima */
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+    </style>
+</head>
+<body>
+    
+    
+<div class="calendar-container">
+    <div class="calendar-header">
+        <button onclick="changeMonth(-1)">⬅</button>
+        <h2 id="month-year"></h2>
+        <button onclick="changeMonth(1)">➡</button>
+    </div>
+    <div id="calendar-controls" style="text-align: center; margin-bottom: 10px;">
+        <button id="view-details" class="details-button">Ver detalles</button>
+    </div>
+    
+    
+
+    <div class="account-summary">
+        <div class="account-summary">
+            <div class="account-size-container">
+                <label for="account-size">Tamaño de cuenta:</label>
+                <input type="number" id="account-size" placeholder="Ingrese tamaño de cuenta" min="1" step="1">
+                <div class="total-balance-container">
+                    <span>Total Balance:</span>
+                    <span id="total-balance">0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="monthly-total-container">
+            <span>Total del mes:</span>
+            <span id="monthly-total">0.00</span>
+            <div class="monthly-percentage-container">
+                <span>Variación (%):</span>
+                <span id="monthly-percentage">0%</span>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    <div class="days-of-week">
+        <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+    </div>
+    <div class="calendar-days" id="calendar-days"></div>
+</div>
+
+<script>
+    const monthYear = document.getElementById("month-year");
+    const calendarDays = document.getElementById("calendar-days");
+
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+
+    function getStorageKey(month, year) {
+        return `calendarData-${month}-${year}`;
+    }
+
+    function saveData(month, year, data) {
+        localStorage.setItem(getStorageKey(month, year), JSON.stringify(data));
+    }
+
+    function loadData(month, year) {
+        return JSON.parse(localStorage.getItem(getStorageKey(month, year))) || {};
+    }
+
+    function renderCalendar(month, year) {
+    calendarDays.innerHTML = "";
+    monthYear.innerText = new Date(year, month).toLocaleString("es-ES", { month: "long", year: "numeric" });
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let lastDate = new Date(year, month + 1, 0).getDate();
+    let savedData = loadData(month, year);
+
+    let weekContainer = document.createElement("div");
+    weekContainer.classList.add("week-container");
+
+    // Asegurar que la primera fila comienza en el día correcto
+    for (let i = 0; i < firstDay; i++) {
+        let emptyDiv = document.createElement("div");
+        emptyDiv.classList.add("empty");
+        weekContainer.appendChild(emptyDiv);
+    }
+
+    for (let day = 1; day <= lastDate; day++) {
+        let dayDiv = document.createElement("div");
+        dayDiv.classList.add("day");
+        dayDiv.innerHTML = `<b>${day}</b>`;
+
+        if (day === currentDate.getDate() && month === currentDate.getMonth() && year === currentDate.getFullYear()) {
+            dayDiv.classList.add("today");
+        }
+
+        let selectContainer = document.createElement("div");
+        selectContainer.classList.add("select-container");
+
+        let newButton = document.createElement("button");
+        newButton.textContent = "Nuevo";
+        newButton.classList.add("new-button");
+        newButton.onclick = function () {
+            let pair = addSelectPair(selectContainer, month, year, day);
+            saveDaySelections(month, year, day, selectContainer);
+            updateTotalRatio(selectContainer, month, year, day);
+            updateWeeklyTotals(month, year);
+        };
+
+        dayDiv.appendChild(selectContainer);
+        dayDiv.appendChild(newButton);
+        weekContainer.appendChild(dayDiv);
+
+        if (savedData[day]) {
+            savedData[day].forEach(pair => {
+                addSelectPair(selectContainer, month, year, day, pair);
+            });
+        }
+
+        updateTotalRatio(selectContainer, month, year, day);
+
+        // Cuando la semana está completa (7 días) o es el último día del mes, añadir la suma semanal
+        if ((new Date(year, month, day).getDay() === 6) || (day === lastDate)) {
+            // Completar la semana con espacios vacíos si es necesario
+            while (weekContainer.children.length < 7) {
+                let emptyDiv = document.createElement("div");
+                emptyDiv.classList.add("empty");
+                weekContainer.appendChild(emptyDiv);
+            }
+
+            let weekTotalDiv = document.createElement("div");
+            weekTotalDiv.classList.add("week-total");
+            weekTotalDiv.textContent = "Semana: 0.00";
+            weekContainer.appendChild(weekTotalDiv);
+
+            calendarDays.appendChild(weekContainer);
+            weekContainer = document.createElement("div");
+            weekContainer.classList.add("week-container");
+        }
+    }
+
+    updateWeeklyTotals(month, year);
+}
+
+
+
+function addSelectPair(container, month, year, day, savedValues = { asset: "", ratio: "", image: "", type: "" }) {
+    let pairContainer = document.createElement("div");
+    pairContainer.classList.add("pair-container");
+
+    let assetSelect = document.createElement("select");
+    ["", "NAS100", "US30", "SP500", "GBPUSD", "USJPY", "EURUSD", "XAUUSD", "Eliminar"].forEach(asset => {
+        let option = document.createElement("option");
+        option.value = asset;
+        option.textContent = asset || "-- Seleccionar --";
+        if (!asset) option.disabled = true;
+        if (asset === savedValues.asset) option.selected = true;
+        assetSelect.appendChild(option);
+    });
+
+    let ratioInput = document.createElement("input");
+    ratioInput.type = "number";
+    ratioInput.placeholder = "Ingrese monto";
+    ratioInput.value = savedValues.ratio || "";
+    ratioInput.min = "-9999";
+    ratioInput.step = "0.01";
+
+    let imageButton = document.createElement("button");
+    imageButton.textContent = "Añadir Imagen";
+    imageButton.classList.add("image-button");
+
+    let imageInput = document.createElement("input");
+    imageInput.type = "file";
+    imageInput.accept = "image/*";
+    imageInput.style.display = "none";
+
+    let imagePreview = document.createElement("img");
+    imagePreview.classList.add("image-preview");
+
+    if (savedValues.image) {
+        imagePreview.src = savedValues.image;
+        imagePreview.style.display = "block";
+    } else {
+        imagePreview.style.display = "none";
+    }
+
+    imageButton.onclick = () => imageInput.click();
+
+    imageInput.onchange = function () {
+        let file = imageInput.files[0];
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = "block";
+                savedValues.image = e.target.result;
+                saveDaySelections(month, year, day, container);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    imagePreview.onclick = function () {
+        openImageModal(imagePreview.src);
+    };
+
+    // 🟢 Botones de Compra y Venta (Selección Única)
+    let buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("button-container");
+
+    let buyButton = document.createElement("button");
+    buyButton.textContent = "Compra";
+    buyButton.classList.add("buy-button");
+
+    let sellButton = document.createElement("button");
+    sellButton.textContent = "Venta";
+    sellButton.classList.add("sell-button");
+
+    // Aplicar el estado guardado
+    if (savedValues.type === "Compra") {
+        buyButton.classList.add("selected");
+    } else if (savedValues.type === "Venta") {
+        sellButton.classList.add("selected");
+    }
+    // 🟡 Botones TP, SL, BE (selección única)
+    let tradeTypeContainer = document.createElement("div");
+    tradeTypeContainer.classList.add("trade-type-container");
+
+    let tpButton = document.createElement("button");
+    tpButton.textContent = "TP";
+    tpButton.classList.add("tp-button");
+
+    let slButton = document.createElement("button");
+    slButton.textContent = "SL";
+    slButton.classList.add("sl-button");
+
+    let beButton = document.createElement("button");
+    beButton.textContent = "BE";
+    beButton.classList.add("be-button");
+
+    // Aplicar el estado guardado
+    if (savedValues.trade === "TP") tpButton.classList.add("selected");
+    else if (savedValues.trade === "SL") slButton.classList.add("selected");
+    else if (savedValues.trade === "BE") beButton.classList.add("selected");
+
+    // Función de selección única
+    function selectTradeOption(type) {
+        tpButton.classList.remove("selected");
+        slButton.classList.remove("selected");
+        beButton.classList.remove("selected");
+
+        if (type === "TP") tpButton.classList.add("selected");
+        else if (type === "SL") slButton.classList.add("selected");
+        else if (type === "BE") beButton.classList.add("selected");
+
+        savedValues.trade = type;
+        saveDaySelections(month, year, day, container);
+    }
+
+    tpButton.onclick = () => selectTradeOption("TP");
+    slButton.onclick = () => selectTradeOption("SL");
+    beButton.onclick = () => selectTradeOption("BE");
+
+    tradeTypeContainer.appendChild(tpButton);
+    tradeTypeContainer.appendChild(slButton);
+    tradeTypeContainer.appendChild(beButton);
+
+
+    // Función para manejar la selección única
+    function selectType(type) {
+        if (type === "Compra") {
+            buyButton.classList.add("selected");
+            sellButton.classList.remove("selected");
+        } else if (type === "Venta") {
+            sellButton.classList.add("selected");
+            buyButton.classList.remove("selected");
+        }
+        savedValues.type = type;
+        saveDaySelections(month, year, day, container);
+    }
+
+    buyButton.onclick = () => selectType("Compra");
+    sellButton.onclick = () => selectType("Venta");
+
+    buttonContainer.appendChild(buyButton);
+    buttonContainer.appendChild(sellButton);
+
+    assetSelect.onchange = () => {
+        if (assetSelect.value === "Eliminar") {
+            container.removeChild(pairContainer);
+            saveDaySelections(month, year, day, container);
+        } else {
+            saveDaySelections(month, year, day, container);
+        }
+        updateTotalRatio(container, month, year, day);
+    };
+
+    ratioInput.oninput = () => {
+        saveDaySelections(month, year, day, container);
+        updateTotalRatio(container, month, year, day);
+    };
+
+    pairContainer.appendChild(assetSelect);
+    pairContainer.appendChild(ratioInput);
+    pairContainer.appendChild(imageButton);
+    pairContainer.appendChild(imageInput);
+    pairContainer.appendChild(imagePreview);
+    pairContainer.appendChild(buttonContainer); // 🟢 Añadir los botones de Compra/Venta
+    pairContainer.appendChild(tradeTypeContainer); // 🟢 Añadir los botones de TP SL y BE
+    container.appendChild(pairContainer);
+
+    updateTotalRatio(container, month, year, day);
+}
+
+
+function saveDaySelections(month, year, day, container) {
+    let selections = [...container.children].map(pair => ({
+    asset: pair.children[0].value,
+    ratio: pair.children[1].value,
+    image: pair.children[4].src || "",
+    type: pair.querySelector(".buy-button.selected, .sell-button.selected")?.textContent || "",
+    trade: pair.querySelector(".tp-button.selected, .sl-button.selected, .be-button.selected")?.textContent || ""
+    })).filter(pair => pair.asset !== "Eliminar");
+
+
+    let data = loadData(month, year);
+
+    if (selections.length > 0) {
+        data[day] = selections;
+    } else {
+        delete data[day];
+    }
+
+    saveData(month, year, data);
+}
+
+
+
+function openImageModal(imageSrc) {
+    let modal = document.createElement("div");
+    modal.classList.add("image-modal");
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <img src="${imageSrc}" class="modal-image">
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Ocultar el nombre del mes y las flechas
+    document.body.classList.add("hide-header");
+
+    // Cerrar el modal y restaurar el header
+    modal.querySelector(".close-modal").onclick = function () {
+        document.body.removeChild(modal);
+        document.body.classList.remove("hide-header"); // Mostrar el header nuevamente
+    };
+}
+
+    function updateTotalRatio(container, month, year, day) {
+    let total = 0;
+    
+    [...container.children].forEach(pair => {
+        let value = parseFloat(pair.children[1].value) || 0;
+        total += value;
+    });
+
+    let totalElement = container.parentElement.querySelector(".total-ratio");
+    if (!totalElement) {
+        totalElement = document.createElement("div");
+        totalElement.classList.add("total-ratio");
+        container.parentElement.appendChild(totalElement);
+    }
+    
+    totalElement.textContent = `Total: ${total.toFixed(2)}`;
+
+    let dayContainer = container.parentElement;
+
+    if (total > 0) {
+        dayContainer.style.backgroundColor = "#c8f7c5";
+    } else if (total < 0) {
+        dayContainer.style.backgroundColor = "#f7c5c5";
+    } else {
+        dayContainer.style.backgroundColor = "#ddd";
+    }
+
+    updateWeeklyTotals(month, year);
+}
+
+function saveAccountSize() {
+    let accountSize = document.getElementById("account-size").value;
+    localStorage.setItem("accountSize", accountSize);
+}
+
+function loadAccountSize() {
+    let accountSizeInput = document.getElementById("account-size");
+    let savedSize = localStorage.getItem("accountSize");
+
+    if (savedSize) {
+        accountSizeInput.value = savedSize;
+    } else {
+        accountSizeInput.value = "5000"; // Valor por defecto si no hay dato guardado
+    }
+
+    updateWeeklyTotals(currentMonth, currentYear); // Asegurar que el total se actualiza bien al cargar la página
+}
+
+// Cargar tamaño de cuenta al inicio
+document.addEventListener("DOMContentLoaded", function () {
+    loadAccountSize(); // Cargar el tamaño de cuenta primero
+    renderCalendar(currentMonth, currentYear); // Renderizar el calendario
+    updateWeeklyTotals(currentMonth, currentYear); // Asegurar que el total se actualiza bien
+});
+
+// Guardar automáticamente cuando cambia el valor
+document.getElementById("account-size").addEventListener("input", saveAccountSize);
+    
+function updateWeeklyTotals(month, year) {
+    let weekContainers = document.querySelectorAll(".week-container");
+    let monthTotal = 0; // Variable para la suma total del mes
+
+    weekContainers.forEach(weekContainer => {
+        let weekTotal = 0;
+        let dayContainers = weekContainer.querySelectorAll(".day");
+
+        dayContainers.forEach(dayContainer => {
+            let totalElement = dayContainer.querySelector(".total-ratio");
+            if (totalElement) {
+                let totalValue = parseFloat(totalElement.textContent.replace("Total: ", "")) || 0;
+                weekTotal += totalValue;
+            }
+        });
+
+        let weekTotalElement = weekContainer.querySelector(".week-total");
+        if (weekTotalElement) {
+            weekTotalElement.textContent = `Semana: ${weekTotal.toFixed(2)}`;
+
+            if (weekTotal > 0) {
+                weekTotalElement.style.backgroundColor = "#c8f7c5"; // Verde claro
+            } else if (weekTotal < 0) {
+                weekTotalElement.style.backgroundColor = "#f7c5c5"; // Rojo claro
+            } else {
+                weekTotalElement.style.backgroundColor = "#ddd"; // Gris neutro
+            }
+        }
+
+        monthTotal += weekTotal; // Sumar al total del mes
+    });
+
+    let monthlyTotalElement = document.getElementById("monthly-total");
+    if (monthlyTotalElement) {
+        monthlyTotalElement.textContent = `${monthTotal.toFixed(2)}`;
+
+        if (monthTotal > 0) {
+            monthlyTotalElement.style.color = "#2E7D32"; // Verde oscuro
+        } else if (monthTotal < 0) {
+            monthlyTotalElement.style.color = "#C62828"; // Rojo oscuro
+        } else {
+            monthlyTotalElement.style.color = "#333"; // Color neutro
+        }
+    }
+
+    // 🟢 Calcular el Total Balance (Tamaño de cuenta + Total del mes)
+    let accountSizeInput = document.getElementById("account-size");
+    let accountSize = parseFloat(accountSizeInput.value) || 0; // Evita valores vacíos o NaN
+    let totalBalance = accountSize + monthTotal;
+
+    let totalBalanceElement = document.getElementById("total-balance");
+    if (totalBalanceElement) {
+        totalBalanceElement.textContent = `${totalBalance.toFixed(2)}`;
+
+        // Cambiar color del balance según el resultado
+        if (totalBalance > accountSize) {
+            totalBalanceElement.style.color = "#2E7D32"; // Verde oscuro si hay ganancia
+        } else if (totalBalance < accountSize) {
+            totalBalanceElement.style.color = "#C62828"; // Rojo oscuro si hay pérdida
+        } else {
+            totalBalanceElement.style.color = "#333"; // Color neutro
+        }
+    }
+}
+
+
+    function changeMonth(step) {
+        currentMonth += step;
+        renderCalendar(currentMonth, currentYear);
+    }
+
+    renderCalendar(currentMonth, currentYear);
+
+
+
+
+
+
+    // Función para cerrar el modal de detalles
+// Función para cerrar el modal
+function closeDetailsModal() {
+    // Ocultar el modal
+    document.getElementById('details-modal').style.display = 'none';
+    
+    // Restaurar la visibilidad del encabezado (el mes y las flechas)
+    document.body.classList.remove("hide-header");
+
+    // Volver a activar el botón "Ver detalles" después de cerrarlo
+    document.getElementById('view-details').disabled = false; // Activar el botón nuevamente
+}
+// Asignar el evento al botón "Ver detalles"
+document.getElementById('view-details').addEventListener('click', openDetailsModal);
+
+
+
+/*Grafico cartesiano*/
+// Función para crear el gráfico
+// Función para crear el gráfico
+// Función para crear el gráfico
+// Función para crear el gráfico
+// Función para crear el gráfico
+function createAccountChart(accountData) {
+    var ctx = document.getElementById('account-chart').getContext('2d');
+
+    // Calcular el valor del 0.5% del tamaño de cuenta
+    let accountSize = parseFloat(document.getElementById('account-size').value) || 5000; // Tamaño de cuenta por defecto 5000
+    let increment = accountSize * 0.005;  // 0.5% del tamaño de cuenta
+    let minValue = Math.min(...accountData.results) - increment;  // Minimo valor para la escala
+    let maxValue = Math.max(...accountData.results) + increment;  // Maximo valor para la escala
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: accountData.dates, // Fechas de cada día
+            datasets: [{
+                label: 'Resultado Diario',
+                data: accountData.results, // Resultados de cada día (Total: de cada día)
+                borderColor: '#4caf50',
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: false, // No comenzar en 0, ajustar con el rango dinámico
+                    min: minValue, // Valor mínimo de la escala
+                    max: maxValue, // Valor máximo de la escala
+                    ticks: {
+                        stepSize: increment, // Definir el incremento de 0.5%
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+function openDetailsModal() {
+    let tpCount = 0;
+    let slCount = 0;
+    let beCount = 0;
+    let buyCount = 0;
+    let sellCount = 0;
+
+    // Obtener el valor de "Tamaño de cuenta" inicial
+    let accountSize = parseFloat(document.getElementById('account-size').value) || 0; // Tamaño de cuenta (inicial)
+
+    // Datos para el gráfico
+    let accountData = {
+        dates: [], // Fechas de cada día
+        results: [] // Resultados de cada día (Total: de cada día)
+    };
+
+    // Inicializar resultado de la cuenta
+    let accountBalance = accountSize;
+
+    document.querySelectorAll('.day').forEach(dayDiv => {
+        // Obtener la fecha (día) del calendario
+        let dayLabel = dayDiv.querySelector('b').innerText;
+
+        // Obtener el total del día desde el .total-ratio
+        let totalElement = dayDiv.querySelector('.total-ratio');
+        if (totalElement) {
+            // Extraer el valor de "Total: "
+            let totalValue = parseFloat(totalElement.textContent.replace('Total: ', '')) || 0;
+
+            // Sumar ese valor al resultado acumulado de la cuenta
+            accountBalance += totalValue;
+
+            // Agregar los datos al gráfico (fechas y resultados)
+            accountData.dates.push(`Día ${dayLabel}`);
+            accountData.results.push(accountBalance);
+        }
+
+        // Contar los botones TP, SL, BE, Compra y Venta
+        tpCount += dayDiv.querySelectorAll('.tp-button.selected').length;
+        slCount += dayDiv.querySelectorAll('.sl-button.selected').length;
+        beCount += dayDiv.querySelectorAll('.be-button.selected').length;
+        buyCount += dayDiv.querySelectorAll('.buy-button.selected').length;
+        sellCount += dayDiv.querySelectorAll('.sell-button.selected').length;
+    });
+
+    // Mostrar las cantidades de TP, SL, BE, Compra y Venta en el modal
+    document.getElementById('tp-details').textContent = `Cantidad de TP: ${tpCount}`;
+    document.getElementById('sl-details').textContent = `Cantidad de SL: ${slCount}`;
+    document.getElementById('be-details').textContent = `Cantidad de BE: ${beCount}`;
+    document.getElementById('buy-details').textContent = `Cantidad de Compra: ${buyCount}`;
+    document.getElementById('sell-details').textContent = `Cantidad de Venta: ${sellCount}`;
+
+    // Crear el gráfico con los resultados de cada día
+    createAccountChart(accountData);
+
+    // Ocultar el encabezado (el mes y las flechas)
+    document.body.classList.add("hide-header");
+
+    // Mostrar el modal
+    document.getElementById('details-modal').style.display = 'flex';
+
+    // Desactivar el botón "Ver detalles" para evitar múltiples clics
+    document.getElementById('view-details').disabled = true;
+}
+
+
+</script>
+
+</body>
+<!-- Modal para detalles -->
+<!-- Modal para detalles -->
+<div id="details-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeDetailsModal()">&times;</span>
+        <h3>Detalles</h3>
+        <p id="tp-details">Cantidad de TP: 0</p>
+        <p id="sl-details">Cantidad de SL: 0</p>
+        <p id="be-details">Cantidad de BE: 0</p>
+        <p id="buy-details">Cantidad de Compra: 0</p>
+        <p id="sell-details">Cantidad de Venta: 0</p>
+
+        <!-- Agregar el gráfico aquí -->
+        <canvas id="account-chart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
